@@ -256,8 +256,14 @@ end
     savedTestItem = SearchLight.save(testItem)
     @test savedTestItem === true
 
-    savedTestItem = booksWithInterns |> save
-    @test savedTestItem === true
+    savedTestItems = booksWithInterns |> save
+    @test savedTestItems === true
+
+    idTestItem = SearchLight.save!(testItem)
+    @test idTestItem.id !== nothing
+    @test idTestItem.id.value  > 0
+
+    booksWithInterns |> save!
 
     ############ tearDown ##################
     tearDown(conn)

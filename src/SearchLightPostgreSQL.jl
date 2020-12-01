@@ -174,7 +174,7 @@ function SearchLight.to_find_sql(m::Type{T}, q::SearchLight.SQLQuery, joins::Uni
 end
 
 ### fallback function if storableFields not defined in the module
-function storableFields(m)
+function storableFields(m::Type{T}) where {T<:SearchLight.AbstractModel}
   tmpStorage = Dict{String,String}()
   for field in SearchLight.persistable_fields(typeof(m))
     push!(tmpStorage, field => field)
@@ -184,7 +184,7 @@ end
 
 function SearchLight.to_store_sql(m::T; conflict_strategy = :error)::String where {T<:SearchLight.AbstractModel}
   
-  uf = storableFields(m)
+  uf = storableFields(typeof(m))
 
   sql = if ! SearchLight.ispersisted(m) || (SearchLight.ispersisted(m) && conflict_strategy == :update)
     key = getkey(uf, SearchLight.primary_key_name(m), nothing)
@@ -246,7 +246,7 @@ end
 
 function SearchLight.update_query_part(m::T)::String where {T<:SearchLight.AbstractModel}
 
-  uf = storableFields(m)
+  uf = storableFields(typeof(m))
 
   update_values = join(map(x -> "$(string(SearchLight.SQLColumn(uf[x]))) = $(string(SearchLight.to_sqlinput(m, Symbol(x), getfield(m, Symbol(x)))) )", collect(keys(uf))), ", ")
 

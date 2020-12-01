@@ -135,7 +135,7 @@ module TestModels
             )
   end
 
-  function storableFields(m::BookWithInterns)
+  function storableFields(m::Type{BookWithInterns}) 
     Dict(["id" => "id",
           "author" => "author",
           "title" => "title",
