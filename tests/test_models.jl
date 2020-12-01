@@ -2,9 +2,11 @@ module TestModels
 
   using SearchLight
 
+  import SearchLight: storableFields
+
   ######## Model from Genie-Searchligth-example-app extracted ############
   export Book, BookWithInterns
-  export seed, fields_to_store
+  export seed
 
   mutable struct Book <: AbstractModel
 
@@ -131,6 +133,13 @@ module TestModels
             # before_save, after_save, on_save, on_find, after_find                       ### CALLBACKS
             # scopes                                                                      ### SCOPES
             )
+  end
+
+  function storableFields(m::BookWithInterns)
+    Dict(["id" => "id",
+          "author" => "author",
+          "title" => "title",
+          "cover" => "cover"])
   end
 
   function seed()

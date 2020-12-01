@@ -4,15 +4,34 @@ using Test, TestSetExtensions, SafeTestsets
 using SearchLight
 using SearchLightPostgreSQL
 
+module TestSetupTeardown
 
-function prepareDbConnection()
-    connection_file = "postgres_connection.yml"
-    conn_info_postgres = SearchLight.Configuration.load(connection_file)
-    conn = SearchLight.connect(conn_info_postgres)
+  using SearchLight
+  using SearchLightPostgreSQL
 
-    return conn
+  export prepareDbConnection, tearDown
+
+  function prepareDbConnection()
+      connection_file = "postgres_connection.yml"
+      conn_info_postgres = SearchLight.Configuration.load(connection_file)
+      conn = SearchLight.connect(conn_info_postgres)
+
+      return conn
+  end
+
+  function tearDown(conn)
+    if conn !== nothing
+        ######## Dropping used tables
+        SearchLight.Migration.drop_migrations_table()
+        SearchLight.Migration.drop_table(lowercase("Books"))
+        SearchLight.Migration.drop_table(lowercase("BookWithInterns"))
+  
+        SearchLight.disconnect(conn)
+        rm(SearchLight.config.db_migrations_folder,force=true, recursive=true)
+    end
+  end
+
 end
-
 
 @testset "Core features PostgreSQL" begin
 
@@ -163,7 +182,7 @@ end
 
 end
 
-@testset "Model Store and Query" begin
+@testset "Model Store and Query models without inern variables" begin
 
   ## against the convention bind the TestModels from testmodels.jl in the testfolder
   include("test_Models.jl")
@@ -192,22 +211,7 @@ end
 
   @test size(booksReturn) == (5,)
 
-  ## make Table "BooksWithInterns" 
-  SearchLight.Generator.new_table_migration(BookWithInterns)
-  SearchLight.Migration.up()
-
-  booksWithInterns = BookWithInterns[]
-
-  ## prepare the TestBooks
-  for book in TestModels.seed() 
-    push!(booksWithInterns,BookWithInterns(title=book[1], author=book[2]))
-  end
-
-  testItem = BookWithInterns(author="Alexej Tolstoi", title="Krieg oder Frieden")
-
-  savedTestItem = SearchLight.save!(testItem)
-  @test savedTestItem !== nothing
-
+ 
   ############ tearDown ##################
 
   if conn !== nothing
@@ -222,3 +226,40 @@ end
   end 
 
 end
+
+@safetestset "Query and Models with intern variables" begin
+  using Test
+  using SearchLight
+  using SearchLightPostgreSQL
+  using .TestSetupTeardown
+
+    ## against the convention bind the TestModels from testmodels.jl in the testfolder
+    include("test_Models.jl")
+    using .TestModels
+
+    ## establish the database-connection
+    conn = prepareDbConnection()
+
+    ## make Table "BooksWithInterns" 
+    SearchLight.Generator.new_table_migration(BookWithInterns)
+    SearchLight.Migration.up()
+
+    booksWithInterns = BookWithInterns[]
+
+    ## prepare the TestBooks
+    for book in TestModels.seed() 
+      push!(booksWithInterns,BookWithInterns(title=book[1], author=book[2]))
+    end
+
+    testItem = BookWithInterns(author="Alexej Tolstoi", title="Krieg oder Frieden")
+
+    savedTestItem = SearchLight.save(testItem)
+    @test savedTestItem === true
+
+    savedTestItem = booksWithInterns |> save
+    @test savedTestItem === true
+
+    ############ tearDown ##################
+    tearDown(conn)
+
+end## end of testset

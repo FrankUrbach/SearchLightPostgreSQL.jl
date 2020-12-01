@@ -3,6 +3,7 @@ module SearchLightPostgreSQL
 import LibPQ, DataFrames, Logging
 import SearchLight
 
+import SearchLight: storableFields
 
 #
 # Setup
@@ -172,16 +173,25 @@ function SearchLight.to_find_sql(m::Type{T}, q::SearchLight.SQLQuery, joins::Uni
   replace(sql, r"\s+"=>" ")
 end
 
+### fallback function if storableFields not defined in the module
+function storableFields(m)
+  tmpStorage = Dict{String,String}()
+  for field in SearchLight.persistable_fields(typeof(m))
+    push!(tmpStorage, field => field)
+  end
+  return tmpStorage
+end
 
 function SearchLight.to_store_sql(m::T; conflict_strategy = :error)::String where {T<:SearchLight.AbstractModel}
-  uf = SearchLight.persistable_fields(typeof(m))
+  
+  uf = storableFields(m)
 
   sql = if ! SearchLight.ispersisted(m) || (SearchLight.ispersisted(m) && conflict_strategy == :update)
-    pos = findfirst(x -> x == SearchLight.primary_key_name(m), uf)
-    pos > 0 && splice!(uf, pos)
+    key = getkey(uf, SearchLight.primary_key_name(m), nothing)
+    key !== nothing && pop!(uf, key)
 
     fields = SearchLight.SQLColumn(uf)
-    vals = join( map(x -> string(SearchLight.to_sqlinput(m, Symbol(x), getfield(m, Symbol(x)))), uf), ", ")
+    vals = join( map(x -> string(SearchLight.to_sqlinput(m, Symbol(x), getfield(m, Symbol(x)))), collect(keys(uf))), ", ")
 
     "INSERT INTO $(SearchLight.table(typeof(m))) ( $fields ) VALUES ( $vals )" *
         if ( conflict_strategy == :error ) ""
@@ -235,7 +245,10 @@ end
 
 
 function SearchLight.update_query_part(m::T)::String where {T<:SearchLight.AbstractModel}
-  update_values = join(map(x -> "$(string(SearchLight.SQLColumn(x))) = $(string(SearchLight.to_sqlinput(m, Symbol(x), getfield(m, Symbol(x)))) )", SearchLight.persistable_fields(typeof(m))), ", ")
+
+  uf = storableFields(m)
+
+  update_values = join(map(x -> "$(string(SearchLight.SQLColumn(uf[x]))) = $(string(SearchLight.to_sqlinput(m, Symbol(x), getfield(m, Symbol(x)))) )", collect(keys(uf))), ", ")
 
   " $update_values WHERE $(SearchLight.table(typeof(m))).$(SearchLight.primary_key_name(typeof(m))) = '$(m.id.value)'"
 end
