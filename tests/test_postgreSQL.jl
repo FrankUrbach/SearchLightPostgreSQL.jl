@@ -80,6 +80,7 @@ end
       @test infoVal == valInfo
     end
 
+<<<<<<< HEAD
     ######## teardwon #######
     if conn !== nothing
       SearchLight.disconnect(conn)
@@ -269,3 +270,23 @@ end
     tearDown(conn)
 
 end## end of testset
+
+@safetestset "Saving and Reading with callbacks" begin
+    using SearchLight
+    using SearchLightPostgreSQL
+    using Main.TestSetupTeardown
+    using Dates
+
+    include("test_models.jl")
+    using Main.TestModels
+
+    prepareDbConnection()
+
+    testItem = Callback(title = "testing")
+    SearchLight.Generator.new_table_migration("Callback")
+    SearchLight.Migration.up()
+
+    testItem|>save!
+
+end;
+

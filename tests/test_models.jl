@@ -5,8 +5,9 @@ module TestModels
   import SearchLight: storableFields
 
   ######## Model from Genie-Searchligth-example-app extracted ############
-  export Book, BookWithInterns
+  export Book, BookWithInterns, Callback
   export seed
+  using SearchLight, Dates
 
   mutable struct Book <: AbstractModel
 
@@ -135,8 +136,7 @@ module TestModels
             )
   end
 
-
-  @kwdef mutable struct Callback <: AbstractModel
+  Base.@kwdef mutable struct Callback <: AbstractModel
     id::DbId = DbId()
     title::String = ""
     indicator::Bool = true
