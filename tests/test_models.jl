@@ -135,6 +135,21 @@ module TestModels
             )
   end
 
+
+  @kwdef mutable struct Callback <: AbstractModel
+    id::DbId = DbId()
+    title::String = ""
+    indicator::Bool = true
+    created_at::String = string(Dates.now())
+    # callbacks
+    before_save::Function = (m::Callback) -> begin
+      @info "Do something before saving"
+    end
+    after_save::Function = (m::Callback) -> begin
+      @info "Do something after saving"
+    end
+  end
+
   function storableFields(m::Type{BookWithInterns}) 
     Dict(["id" => "id",
           "author" => "author",
