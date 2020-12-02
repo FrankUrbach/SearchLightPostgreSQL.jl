@@ -176,7 +176,7 @@ end
 ### fallback function if storableFields not defined in the module
 function storableFields(m::Type{T}) where {T<:SearchLight.AbstractModel}
   tmpStorage = Dict{String,String}()
-  for field in SearchLight.persistable_fields(typeof(m))
+  for field in SearchLight.persistable_fields(m)
     push!(tmpStorage, field => field)
   end
   return tmpStorage
