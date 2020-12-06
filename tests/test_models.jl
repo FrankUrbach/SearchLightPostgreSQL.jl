@@ -5,8 +5,8 @@ module TestModels
   import SearchLight: storableFields
 
   ######## Model from Genie-Searchligth-example-app extracted ############
-  export Book, BookWithInterns, Callback
-  export seed
+  export Book, BookWithInterns, Callback, BookWithAuthor, Author
+  export addBook, addBooks, seed
   using SearchLight, Dates
 
   mutable struct Book <: AbstractModel
@@ -155,6 +155,34 @@ module TestModels
           "author" => "author",
           "title" => "title",
           "cover" => "cover"])
+  end
+
+  mutable struct BookWithAuthor<:AbstractModel
+      id::Int64
+      id_author::Int
+      title::String
+      BookWithAuthor(;title="",id= 0 ,id_author= 0) = new(id,id_author,title)
+  end
+
+  mutable struct Author<:AbstractModel
+      id::Int64
+      first_name::String
+      last_name::String
+      books::Array{BookWithAuthor,1}
+      Author(;firstname ="", lastname="", books=Array{BookWithAuthor,1}()) = new(0,firstname,lastname,books)
+  end
+
+  function Base.print(io::IO, book::BookWithAuthor)
+      print(io, "title: $(book.title) author: $(book.author)")
+  end
+
+  function addBook(author::Author, book::BookWithAuthor)
+      book.id_author = author.id
+      push!(author.books, book)
+  end
+
+  function addBooks(author::Author, books::Vector{BookWithAuthor}) 
+      map(book->addBook(author, book), books)
   end
 
   function seed()
