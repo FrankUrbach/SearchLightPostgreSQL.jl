@@ -158,24 +158,39 @@ module TestModels
   end
 
   mutable struct BookWithAuthor<:AbstractModel
-      id::Int64
-      id_author::Int
+      id::DbId
+      id_author::Int64
       title::String
-      BookWithAuthor(;title="",id= 0 ,id_author= 0) = new(id,id_author,title)
+      BookWithAuthor(;title="",id_author= 0) = new(DbId(),id_author,title)
   end
 
   mutable struct Author<:AbstractModel
-      id::Int64
+      id::DbId
       first_name::String
       last_name::String
       books::Array{BookWithAuthor,1}
-      Author(;firstname ="", lastname="", books=Array{BookWithAuthor,1}()) = new(0,firstname,lastname,books)
+      Author(;firstname ="", lastname="", books=Array{BookWithAuthor,1}()) = new(DbId(),firstname,lastname,books)
+  end
+
+  function storableFields(m::Type{Author})
+    Dict(["id"=>"id",
+     "first_name"=>"firstname",
+     "last_name"=>"lastname"])
   end
 
   function Base.print(io::IO, book::BookWithAuthor)
       print(io, "title: $(book.title) author: $(book.author)")
   end
 
+  function Base.show(io::IO, author::Author)
+      print(io,"Firstname: $(author.first_name) Lastname: $(author.last_name) books: $(length(author.books))")
+  end
+
+
+  """
+    function addBook(author::Author, book::BookWithAuthor)
+      attach a book to an author 
+  """
   function addBook(author::Author, book::BookWithAuthor)
       book.id_author = author.id
       push!(author.books, book)

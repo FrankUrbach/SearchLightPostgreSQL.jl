@@ -1,5 +1,6 @@
 using Test, TestSetExtensions, SafeTestsets
 
+include(joinpath(@__DIR__,"test_models.jl"))
 module TestSetupTeardown
 
   using SearchLight
@@ -22,7 +23,7 @@ module TestSetupTeardown
         SearchLight.Migration.drop_migrations_table()
 
         # insert tables you use in tests here
-        tables = ["Book","BookWithIntern","Callback"]
+        tables = ["Book","BookWithIntern","Callback","Author"]
 
         # obtain tables exists or not, if they does drop it
         wheres = join(map(x -> string("'", lowercase(SearchLight.Inflector.to_plural(x)), "'"), tables), " , ", " , ")
@@ -137,8 +138,6 @@ end
     using SearchLight
     using SearchLightPostgreSQL
     using Main.TestSetupTeardown
-
-    include(joinpath(@__DIR__,"test_models.jl"))
     using Main.TestModels
 
   ## establish the database-connection
@@ -171,8 +170,6 @@ end
 @safetestset "Model Store and Query models without inern variables" begin
     using SearchLight
     using SearchLightPostgreSQL
-
-    include(joinpath(@__DIR__,"test_models.jl"))
     using Main.TestModels
 
     using Main.TestSetupTeardown
@@ -212,8 +209,6 @@ end
     using SearchLight
     using SearchLightPostgreSQL
     using Main.TestSetupTeardown
-
-    include(joinpath(@__DIR__,"test_models.jl"))
     using Main.TestModels
 
     ## establish the database-connection
@@ -260,22 +255,37 @@ end## end of testset
     using Main.TestSetupTeardown
     using Test
     using Dates
+    using Main.TestModels
 
-    @testset "Test removing callbacks" begin
-        include(joinpath(@__DIR__,"test_models.jl"))
-        using Main.TestModels
+    conn = prepareDbConnection()
 
-        conn = prepareDbConnection()
+    SearchLight.Migration.create_migrations_table()
+    SearchLight.Generator.new_table_migration(Callback)
+    SearchLight.Migration.up()
 
-        SearchLight.Migration.create_migrations_table()
-        SearchLight.Generator.new_table_migration(Callback)
-        SearchLight.Migration.up()
+    testItem = Callback(title="testing")
 
-        testItem = Callback(title="testing")
+    @test testItem |> save! !== nothing
 
-        @test testItem |> save! !== nothing
-
-        tearDown(conn)
-    end
+    tearDown(conn)
 end;
 
+@safetestset "Saving and Reading fields and datatbase columns are different" begin
+    using SearchLight
+    using SearchLightPostgreSQL
+    using Main.TestSetupTeardown
+    using Main.TestModels
+
+    conn = prepareDbConnection()
+    SearchLight.Migration.create_migrations_table()
+    SearchLight.Generator.new_table_migration(Author)
+    SearchLight.Migration.up()
+
+    testAuthor = Author(firstname="Johann Wolfgang", lastname="Goethe")
+    testId = testAuthor |> save! 
+
+    @test length(find(Author)) > 0 
+
+    ####### tearDown #########
+    tearDown(conn)
+end;
