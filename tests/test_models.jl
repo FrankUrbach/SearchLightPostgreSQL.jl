@@ -6,7 +6,7 @@ module TestModels
 
   ######## Model from Genie-Searchligth-example-app extracted ############
   export Book, BookWithInterns, Callback, BookWithAuthor, Author
-  export addBook, addBooks, seed
+  export addBook, addBooks, seed, seedBook
   using SearchLight, Dates
 
   mutable struct Book <: AbstractModel
@@ -159,9 +159,9 @@ module TestModels
 
   mutable struct BookWithAuthor<:AbstractModel
       id::DbId
-      id_author::Int64
+      id_author::DbId
       title::String
-      BookWithAuthor(;title="",id_author= 0) = new(DbId(),id_author,title)
+      BookWithAuthor(;title="",id_author= DbId()) = new(DbId(),id_author,title)
   end
 
   mutable struct Author<:AbstractModel
@@ -173,13 +173,14 @@ module TestModels
   end
 
   function storableFields(m::Type{Author})
-    Dict(["id"=>"id",
-     "first_name"=>"firstname",
-     "last_name"=>"lastname"])
+    Dict(["id" => "id",
+     "first_name" => "firstname",
+     "last_name" => "lastname",
+     "books" => ""])
   end
 
   function Base.print(io::IO, book::BookWithAuthor)
-      print(io, "title: $(book.title) author: $(book.author)")
+      print(io, "title: $(book.title)")
   end
 
   function Base.show(io::IO, author::Author)
@@ -208,6 +209,14 @@ module TestModels
       ("The Sympathizer!", "Viet Thanh Nguyen"),
       ("Energy and Civilization, A History", "Vaclav Smil")
     ]
+  end
+
+  function seedBook()
+    [ "A Time to Kill",
+    "The Firm",
+    "The Pelican Brief",
+    "The Client",
+    "The Chamber"]
   end
 
 end ### End Module

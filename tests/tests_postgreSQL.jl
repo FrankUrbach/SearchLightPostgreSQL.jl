@@ -23,7 +23,7 @@ module TestSetupTeardown
         SearchLight.Migration.drop_migrations_table()
 
         # insert tables you use in tests here
-        tables = ["Book","BookWithIntern","Callback","Author"]
+        tables = ["Book","BookWithIntern","Callback","Author","BookWithAuthor"]
 
         # obtain tables exists or not, if they does drop it
         wheres = join(map(x -> string("'", lowercase(SearchLight.Inflector.to_plural(x)), "'"), tables), " , ", " , ")
@@ -282,6 +282,52 @@ end;
     SearchLight.Migration.up()
 
     testAuthor = Author(firstname="Johann Wolfgang", lastname="Goethe")
+    testId = testAuthor |> save! 
+
+    @test length(find(Author)) > 0 
+
+    ####### tearDown #########
+    tearDown(conn)
+end;
+
+@safetestset "Saving and Reading fields and datatbase columns are different" begin
+    using SearchLight
+    using SearchLightPostgreSQL
+    using Main.TestSetupTeardown
+    using Main.TestModels
+
+    conn = prepareDbConnection()
+    SearchLight.Migration.create_migrations_table()
+    SearchLight.Generator.new_table_migration(Author)
+    SearchLight.Migration.up()
+
+    testAuthor = Author(firstname="Johann Wolfgang", lastname="Goethe")
+    testId = testAuthor |> save! 
+
+    @test length(find(Author)) > 0 
+
+    ####### tearDown #########
+    tearDown(conn)
+end;
+
+@safetestset "Saving and Reading Models with fields containing submodels" begin
+    using SearchLight
+    using SearchLightPostgreSQL
+    using Main.TestSetupTeardown
+    using Main.TestModels
+
+    conn = prepareDbConnection()
+    SearchLight.Migration.create_migrations_table()
+    SearchLight.Generator.new_table_migration(BookWithAuthor)
+    SearchLight.Migration.up()
+    SearchLight.Generator.new_table_migration(Author)
+    SearchLight.Migration.up()
+
+    #create an author
+    testAuthor = Author(firstname="John", lastname="Grisham")
+    #create books from the author above and bring it to them 
+    testAuthor.books = map(book -> BookWithAuthor(title=book), seedBook())
+   
     testId = testAuthor |> save! 
 
     @test length(find(Author)) > 0 

@@ -3,7 +3,7 @@ module SearchLightPostgreSQL
 import LibPQ, DataFrames, Logging
 import SearchLight
 
-import SearchLight: storableFields
+import SearchLight: storableFields, fields_to_store_directly
 
 #
 # Setup
@@ -35,8 +35,8 @@ const TYPE_MAPPINGS = Dict{Symbol,Symbol}( # Julia / Postgres
   :date       => :DATE,
   :binary     => :BLOB,
   :boolean    => :BOOLEAN,
-  :bool       => :BOOLEAN
-)
+  :bool       => :BOOLEAN,
+  :dbid       => :BIGINT)
 
 const CONNECTIONS = DatabaseHandle[]
 
@@ -174,7 +174,7 @@ function SearchLight.to_find_sql(m::Type{T}, q::SearchLight.SQLQuery, joins::Uni
 end
 
 ### fallback function if storableFields not defined in the module
-function storableFields(m::Type{T}) where {T<:SearchLight.AbstractModel}
+function storableFields(m::Type{T})::Dict{String,String} where {T<:SearchLight.AbstractModel}
   tmpStorage = Dict{String,String}()
   for field in SearchLight.persistable_fields(m)
     push!(tmpStorage, field => field)
@@ -182,9 +182,30 @@ function storableFields(m::Type{T}) where {T<:SearchLight.AbstractModel}
   return tmpStorage
 end
 
+"""
+  Only direct storable fields will be returnd by this function.
+  The fields with an AbstractModel-field or array will be stored temporarly 
+  in the saving method and saved after returning the parent struct.
+"""
+function fields_to_store_directly(m::Type{T}) where {T<:SearchLight.AbstractModel}
+
+  storage_fields = storableFields(m)
+  fields_and_types = SearchLight.to_string_dict(m)
+  uf=Dict{String,String}()
+
+  for (key,value) in storage_fields
+    if !(fields_and_types[key]<:SearchLight.AbstractModel || fields_and_types[key]<:Array{<:SearchLight.AbstractModel,1})
+      push!(uf,key => value)
+    end
+  end
+
+  return uf
+end
+
+
 function SearchLight.to_store_sql(m::T; conflict_strategy = :error)::String where {T<:SearchLight.AbstractModel}
   
-  uf = storableFields(typeof(m))
+  uf = fields_to_store_directly(typeof(m))
 
   sql = if ! SearchLight.ispersisted(m) || (SearchLight.ispersisted(m) && conflict_strategy == :update)
     key = getkey(uf, SearchLight.primary_key_name(m), nothing)
@@ -246,7 +267,7 @@ end
 
 function SearchLight.update_query_part(m::T)::String where {T<:SearchLight.AbstractModel}
 
-  uf = storableFields(typeof(m))
+  uf = fields_to_store_directly(typeof(m))
 
   update_values = join(map(x -> "$(string(SearchLight.SQLColumn(uf[x]))) = $(string(SearchLight.to_sqlinput(m, Symbol(x), getfield(m, Symbol(x)))) )", collect(keys(uf))), ", ")
 
@@ -391,7 +412,7 @@ end
 
 
 function SearchLight.Migration.column_id(name::Union{String,Symbol} = "id", options::Union{String,Symbol} = ""; constraint::Union{String,Symbol} = "", nextval::Union{String,Symbol} = "") :: String
-  "$name SERIAL $constraint PRIMARY KEY $nextval $options"
+  "$name BIGSERIAL $constraint PRIMARY KEY $nextval $options"
 end
 
 
