@@ -351,3 +351,32 @@ end;
     ####### tearDown #########
     tearDown(conn)
 end;
+
+@safetestset "functions findone_or_create, updateby_or_create etc" begin
+  using SearchLight
+  using SearchLightPostgreSQL
+  using Main.TestSetupTeardown
+  using Main.TestModels
+
+  conn = prepareDbConnection()
+  SearchLight.Migration.create_migrations_table()
+  SearchLight.Generator.new_table_migration(BookWithAuthor)
+  SearchLight.Migration.up()
+  SearchLight.Generator.new_table_migration(Author)
+  SearchLight.Migration.up()
+
+  #create an author
+  testAuthor = Author(firstname="John", lastname="Grisham")
+  #create books from the author above and bring it to them 
+  testAuthor.books = map(book -> BookWithAuthor(title=book), seedBook())
+
+  result = findone_or_create(typeof(testAuthor))
+
+  @test result !== nothing
+  @test result.first_name == ""
+  @test result.last_name == ""
+  @test isempty(result.books)
+
+  ####### tearDown #########
+  tearDown(conn)
+end;
