@@ -277,9 +277,14 @@ end;
     using Main.TestModels
 
     conn = prepareDbConnection()
+
+
     SearchLight.Migration.create_migrations_table()
+    SearchLight.Generator.new_table_migration(BookWithAuthor)
+    SearchLight.Migration.up()
     SearchLight.Generator.new_table_migration(Author)
     SearchLight.Migration.up()
+
 
     testAuthor = Author(firstname="Johann Wolfgang", lastname="Goethe")
     testId = testAuthor |> save! 
@@ -298,6 +303,8 @@ end;
 
     conn = prepareDbConnection()
     SearchLight.Migration.create_migrations_table()
+    SearchLight.Generator.new_table_migration(BookWithAuthor)
+    SearchLight.Migration.up()
     SearchLight.Generator.new_table_migration(Author)
     SearchLight.Migration.up()
 
@@ -330,7 +337,16 @@ end;
    
     testId = testAuthor |> save! 
 
-    @test length(find(Author)) > 0 
+    idAuthor = testAuthor.id.value
+    for book in testId.books
+      @test book.id_author.value == idAuthor
+    end
+
+    result = find(Author)
+    @test length(result) > 0 
+
+    @test !isempty(result[1].books)
+    @test length(result[1].books) == length(seedBook())
 
     ####### tearDown #########
     tearDown(conn)
