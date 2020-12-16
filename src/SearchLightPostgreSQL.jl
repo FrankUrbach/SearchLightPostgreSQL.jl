@@ -234,7 +234,7 @@ function prepare_update_part(m::T)::String where {T<:SearchLight.AbstractModel}
   result = ""
   sub_abstracts = SearchLight.array_sub_abstract_models(m)
 
-  if !isempty(aub_abstracts)
+  if !isempty(sub_abstracts)
     result = join(prepare_update_part.(sub_abstracts),";",";")
     result *= ";"
   end 
