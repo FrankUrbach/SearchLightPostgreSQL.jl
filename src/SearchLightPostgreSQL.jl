@@ -234,8 +234,10 @@ function prepare_update_part(m::T)::String where {T<:SearchLight.AbstractModel}
   result = ""
   sub_abstracts = SearchLight.array_sub_abstract_models(m)
 
-  result = join(prepare_update_part.(sub_abstracts),";",";")
-  result *= ";"
+  if !isempty(aub_abstracts)
+    result = join(prepare_update_part.(sub_abstracts),";",";")
+    result *= ";"
+  end 
   result *= "UPDATE $(SearchLight.table(typeof(m))) SET $(SearchLight.update_query_part(m))"
 end
 
