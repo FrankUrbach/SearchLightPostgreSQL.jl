@@ -119,21 +119,6 @@ end
 
 end;
 
-@safetestset "Utility functions PostgreSQL-Adapter" begin
-    using SearchLight
-    using SearchLightPostgreSQL
-    using Main.TestSetupTeardown
-
-    conn = prepareDbConnection()
-
-    @test SearchLight.Migration.create_migrations_table() === nothing
-    @test SearchLight.Migration.drop_migrations_table() === nothing
-
-
-    tearDown(conn)
-
-end
-
 @safetestset "Models and tableMigration" begin
     using SearchLight
     using SearchLightPostgreSQL

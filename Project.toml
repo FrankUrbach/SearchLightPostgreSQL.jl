@@ -5,6 +5,7 @@ version = "0.2.2"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+LanguageServer = "2b0e0bc5-e4fd-59b4-8912-456d1b03d8d7"
 LibPQ = "194296ae-ab2e-5f79-8cd4-7183a0a5a0d1"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"

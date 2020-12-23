@@ -424,7 +424,7 @@ end
 
 
 function SearchLight.Migration.column_id(name::Union{String,Symbol} = "id", options::Union{String,Symbol} = ""; constraint::Union{String,Symbol} = "", nextval::Union{String,Symbol} = "") :: String
-  "$name BIGSERIAL $constraint PRIMARY KEY $nextval $options"
+  "$name BigSerial $constraint PRIMARY KEY $nextval $options"
 end
 
 
